@@ -77,10 +77,10 @@ public class JDBCReservationDAO implements ReservationDAO {
 				}
 			}
 			if( !found ) {
-				throw new ReservationException(String.format("Date range (%s - %s) is not available for reservation", startDate, endDate));
+				throw new ReservationException("INVALID_RESERVATION_DATE", startDate, endDate);
 			}
 		} else {
-			throw new ReservationException(String.format("Unknown site ID : %d", siteID));
+			throw new ReservationException("INVALID_RESERVATION_SITE", siteID);
 		}
 		
 		String sqlReservation = "INSERT INTO reservation(site_id, name, from_date, to_date, create_date) VALUES(?,?,?,?,now()) RETURNING reservation_id";
@@ -89,7 +89,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 			return results.getLong("reservation_id");
 		}
 		
-		throw new ReservationException(String.format("An unknown error has occurred."));
+		throw new ReservationException("UNKNOWN_ERROR");
 	}
 
 	private Site mapRowToSite(SqlRowSet results) {
