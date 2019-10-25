@@ -26,7 +26,7 @@ public class JDBCParkDAO implements ParkDAO {
 	@Override
 	public List<Park> getAvailableParks() {
 		ArrayList<Park> parks = new ArrayList<>();
-		String sqlReturnAllParks = "SELECT park_id, name, location, establish_date, area, visitors, description " + "FROM parks ";
+		String sqlReturnAllParks = "SELECT park_id, name, location, establish_date, area, visitors, description " + "FROM park ";
 		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReturnAllParks);
 		
 		while (results.next()) {
@@ -59,7 +59,7 @@ public class JDBCParkDAO implements ParkDAO {
 		thePark.setName(results.getString("name"));
 		thePark.setLocation("location");
 
-		String tempDateString = results.getString("to_date");
+		String tempDateString = results.getString("establish_date");
 		if (tempDateString != null) {
 			LocalDate tempDate = LocalDate.parse(tempDateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 			thePark.setEstablishedDate(tempDate);
