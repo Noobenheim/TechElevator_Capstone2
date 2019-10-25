@@ -44,7 +44,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 				"ORDER BY site_number ASC ";
 		List<Object> replacements = null;
 		try {
-			replacements = Arrays.asList(campgroundID, LocalDate.parse(startDate), LocalDate.parse(endDate), campgroundID);
+			replacements = new ArrayList<>(Arrays.asList(campgroundID, LocalDate.parse(startDate), LocalDate.parse(endDate), campgroundID));
 		} catch( DateTimeParseException e ) {
 			return available;
 		}
