@@ -43,7 +43,7 @@ public class JDBCParkDAO implements ParkDAO {
 		String sqlReturnAllCampSitesForPark = "SELECT campground_id,  park_id, name, open_from_mm, open_to_mm, daily_fee "
 											+ "FROM campground WHERE park_id = ? ";
 		
-		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReturnAllCampSitesForPark);
+		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReturnAllCampSitesForPark, parkID);
 		
 		while (results.next()) {
 			Campground theCamp = mapRowToCamp(results);
@@ -81,7 +81,7 @@ public class JDBCParkDAO implements ParkDAO {
 		theCamp.setName(results.getString("name"));
 		theCamp.setOpenFromMonth(results.getInt("open_from_mm"));
 		theCamp.setOpenToMonth(results.getInt("open_to_mm"));
-		theCamp.setFee(results.getInt("daily_fee"));
+		theCamp.setFee((int)(results.getDouble("daily_fee")*100.0));
 		
 		return theCamp;
 	}
