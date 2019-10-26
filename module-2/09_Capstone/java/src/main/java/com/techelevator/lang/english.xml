@@ -58,4 +58,5 @@
 <string id="CONFIRMATION_NUMBER">The reservation has been made and the confirmation id is %d</string>
 <string id="CAMPGROUND">Campground</string>
 <string id="CAMPGROUNDS">Campgrounds</string>
+<string id="THE_PARK_IS_CLOSED_FROM"> The park is closed from %s to %s</string>
 </stringfile>

@@ -268,6 +268,15 @@ public class CampgroundCLI {
 		String arrivalDate = dateFormat.format(arrivalDateCalendar.getTime());
 		String departureDate = dateFormat.format(departureDateCalendar.getTime());
 		
+		if ((arrivalDateCalendar.get(Calendar.MONTH) + 1 < campground.getOpenFromMonth()) || (departureDateCalendar.get(Calendar.MONTH) + 1 > campground.getOpenToMonth())) {
+			System.out.format(strings.get("THE_PARK_IS_CLOSED_FROM"), 
+					monthNames.get(campground.getOpenToMonth()),
+					monthNames.get(campground.getOpenFromMonth())
+					);
+			System.out.println();
+			return input.getBoolean(strings.get("ASK_ALTERNATIVE_DATE"));
+		}
+		
 		List<Site> sites = reservationDAO.getAvailableReservations(campground.getCampgroundID(), arrivalDate, departureDate);
 		
 		if( sites.size() == 0 ) {
