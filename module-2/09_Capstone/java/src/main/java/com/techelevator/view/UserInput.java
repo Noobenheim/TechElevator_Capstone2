@@ -6,48 +6,54 @@ import java.io.PrintWriter;
 import java.util.Scanner;
 
 public class UserInput {
-	Scanner in;
-	PrintWriter out;
+	private Scanner in;
+	private PrintWriter out;
 	
 	public UserInput(InputStream in, OutputStream out) {
 		this.in = new Scanner(in);
 		this.out = new PrintWriter(out);
 	}
 	
-	private String displayAndGet(String message) {
-		out.print(message);
+	private String displayAndGet(String message, Object...options) {
+		out.format(message, options);
 		out.print(" ");
 		out.flush();
 		return in.nextLine();
 	}
 	
-	public int getInt(String message) {
-		String line = displayAndGet(message);
-		int number = Integer.MIN_VALUE;
+	public Integer getInt(String message, Object...options) {
+		String line = displayAndGet(message, options);
+		int number;
 		
 		try {
 			number = Integer.parseInt(line);
 		} catch( NumberFormatException e ) {
+			return null;
 		}
 		
 		return number;
 	}
-	public long getLong(String message) {
-		String line = displayAndGet(message);
-		long number = Long.MIN_VALUE;
+	public Long getLong(String message, Object...options) {
+		String line = displayAndGet(message, options);
+		long number;
 		
 		try {
 			number = Long.parseLong(line);
 		} catch( NumberFormatException e ) {
+			return null;
 		}
 		
 		return number;
 	}
-	public String getString(String message) {
-		return displayAndGet(message);
+	public String getString(String message, Object...options) {
+		return displayAndGet(message, options);
 	}
-	public boolean getBoolean(String message) {
-		String line = displayAndGet(message).toLowerCase();
+	public Boolean getBoolean(String message, Object...options) {
+		String line = displayAndGet(message, options).toLowerCase();
+		
+		if( line.trim().isEmpty() ) {
+			return null;
+		}
 		
 		return line.equals("1") || line.equals("true") || line.equals("yes") || line.equals("y");
 	}

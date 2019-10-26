@@ -212,14 +212,14 @@ public class CampgroundCLI {
 			campgroundIDs.put(c.getCampgroundID(), c);
 		}
 		
-		long campgroundID;
+		Long campgroundID;
 		do {
 			System.out.println();
 			campgroundID = input.getLong(strings.get("WHICH_CAMPGROUND"));
 			// verify user input
-			if( !campgroundIDs.containsKey(campgroundID) && campgroundID != 0 ) {
+			if( campgroundID == null || !campgroundIDs.containsKey(campgroundID) && campgroundID != 0 ) {
 				System.err.println(strings.get("INVALID_CAMPGROUND"));
-				campgroundID = -1;
+				campgroundID = -1L;
 			}
 		} while(campgroundID < 0 );
 		if( campgroundID == 0 ) {
@@ -250,11 +250,32 @@ public class CampgroundCLI {
 				}
 			} while(true);
 			
-			repeatDate = showReservationMenu(campgroundIDs.get(campgroundID), arrivalDate.getCalendar(), departureDate.getCalendar());
+			Boolean additionalRestrictions = input.getBoolean(strings.get("SPECIAL_REQUIREMENTS"));
+			Map<String,Object> requirements = new HashMap<>();
+			if( additionalRestrictions != null && additionalRestrictions ) {
+				Long people = input.getLong("%s %s", strings.get("REQUIREMENT_PEOPLE"), strings.get("REQUIREMENT_SKIPPED"));
+				if( people != null && people > 0 ) {
+					requirements.put("people", people);
+				}
+				Boolean wheelchair = input.getBoolean("%s %s", strings.get("REQUIREMENT_WHEELCHAIR"), strings.get("REQUIREMENT_SKIPPED"));
+				if( wheelchair != null && wheelchair) {
+					requirements.put("wheelchair", wheelchair);
+				}
+				Integer rv = input.getInt("%s %s", strings.get("REQUIREMENT_RV_LENGTH"), strings.get("REQUIREMENT_SKIPPED"));
+				if( rv != null && rv > 0 ) {
+					requirements.put("rv", rv);
+				}
+				Boolean utility = input.getBoolean("%s %s", strings.get("REQUIREMENT_UTILITY"), strings.get("REQUIREMENT_SKIPPED"));
+				if( utility != null && utility ) {
+					requirements.put("utility", utility);
+				}
+			}
+			
+			repeatDate = showReservationMenu(campgroundIDs.get(campgroundID), arrivalDate.getCalendar(), departureDate.getCalendar(), requirements);
 		} while( repeatDate );
 	}
 	
-	private boolean showReservationMenu(Campground campground, Calendar arrivalDateCalendar, Calendar departureDateCalendar) {
+	private boolean showReservationMenu(Campground campground, Calendar arrivalDateCalendar, Calendar departureDateCalendar, Map<String,Object> requirements) {
 		menu.cls();
 		
 		// swap the dates if departure is before arrival
@@ -277,7 +298,13 @@ public class CampgroundCLI {
 			return input.getBoolean(strings.get("ASK_ALTERNATIVE_DATE"));
 		}
 		
-		List<Site> sites = reservationDAO.getAvailableReservations(campground.getCampgroundID(), arrivalDate, departureDate);
+		// parse requirements
+		Integer personCapacity = (Integer)requirements.get("people");
+		Boolean needsWheelchairAccess = (Boolean)requirements.get("wheelchair");
+		Integer rvLengthRequired = (Integer)requirements.get("rv");
+		Boolean needsUtility = (Boolean)requirements.get("utility");
+		
+		List<Site> sites = reservationDAO.getAvailableReservations(campground.getCampgroundID(), arrivalDate, departureDate, personCapacity, needsWheelchairAccess, rvLengthRequired, needsUtility);
 		
 		if( sites.size() == 0 ) {
 			dateFormat = new SimpleDateFormat("EEEE LLLL d, yyyy");
