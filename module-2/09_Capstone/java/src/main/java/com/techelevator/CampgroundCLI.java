@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
@@ -87,6 +88,7 @@ public class CampgroundCLI {
 	}
 	
 	private void showMainMenu() {
+		menu.cls();
 		System.out.println(strings.get("MAIN_MENU_MESSAGE"));
 		List<Park> parks = parkDAO.getAvailableParks();
 		String choice;
@@ -198,45 +200,68 @@ public class CampgroundCLI {
 			campgroundID = input.getLong(strings.get("WHICH_CAMPGROUND"));
 			// verify user input
 			if( !campgroundIDs.containsKey(campgroundID) && campgroundID != 0 ) {
-				System.out.println(strings.get("INVALID_CAMPGROUND"));
+				System.err.println(strings.get("INVALID_CAMPGROUND"));
 				campgroundID = -1;
 			}
 		} while(campgroundID < 0 );
 		if( campgroundID == 0 ) {
 			return;
 		}
-		SimpleDateFormat arrivalDate = new SimpleDateFormat("MM/dd/yyyy");
+		boolean repeatDate;
 		do {
-			String date = input.getString(strings.get("WHAT_IS_ARRIVAL_DATE"));
-			// validate valid date
-			try {
-				arrivalDate.parse(date);
-				break;
-			} catch( ParseException e ) {
-				System.out.println(strings.get("INVALID_DATE"));
-			}
-		} while(true);
-		SimpleDateFormat departureDate = new SimpleDateFormat("MM/dd/yyyy");
-		do {
-			String date = input.getString(strings.get("WHAT_IS_DEPARTURE_DATE"));
-			// validate valid date
-			try {
-				departureDate.parse(date);
-				break;
-			} catch( ParseException e ) {
-				System.out.println(strings.get("INVALID_DATE"));
-			}
-		} while(true);
-		
-		showReservationMenu(campgroundIDs.get(campgroundID), arrivalDate.getCalendar(), departureDate.getCalendar());
+			SimpleDateFormat arrivalDate = new SimpleDateFormat("MM/dd/yyyy");
+			do {
+				String date = input.getString(strings.get("WHAT_IS_ARRIVAL_DATE"));
+				// validate valid date
+				try {
+					arrivalDate.parse(date);
+					break;
+				} catch( ParseException e ) {
+					System.err.println(strings.get("INVALID_DATE"));
+				}
+			} while(true);
+			SimpleDateFormat departureDate = new SimpleDateFormat("MM/dd/yyyy");
+			do {
+				String date = input.getString(strings.get("WHAT_IS_DEPARTURE_DATE"));
+				// validate valid date
+				try {
+					departureDate.parse(date);
+					break;
+				} catch( ParseException e ) {
+					System.err.println(strings.get("INVALID_DATE"));
+				}
+			} while(true);
+			
+			repeatDate = showReservationMenu(campgroundIDs.get(campgroundID), arrivalDate.getCalendar(), departureDate.getCalendar());
+		} while( repeatDate );
 	}
 	
-	private void showReservationMenu(Campground campground, Calendar arrivalDateCalendar, Calendar departureDateCalendar) {
+	private boolean showReservationMenu(Campground campground, Calendar arrivalDateCalendar, Calendar departureDateCalendar) {
+		menu.cls();
+		
+		// swap the dates if departure is before arrival
+		if( arrivalDateCalendar.getTimeInMillis() > departureDateCalendar.getTimeInMillis() ) {
+			Calendar buffer = arrivalDateCalendar;
+			arrivalDateCalendar = departureDateCalendar;
+			departureDateCalendar = buffer;
+		}
+		
 		SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd");
 		String arrivalDate = dateFormat.format(arrivalDateCalendar.getTime());
 		String departureDate = dateFormat.format(departureDateCalendar.getTime());
 		
 		List<Site> sites = reservationDAO.getAvailableReservations(campground.getCampgroundID(), arrivalDate, departureDate);
+		
+		if( sites.size() == 0 ) {
+			dateFormat = new SimpleDateFormat("EEEE LLLL d, yyyy");
+			System.out.format(strings.get("NO_RESERVATIONS_AVAILABLE"),
+							  dateFormat.format(arrivalDateCalendar.getTime()),
+							  dateFormat.format(departureDateCalendar.getTime())
+						     );
+			System.out.println();
+			return input.getBoolean(strings.get("ASK_ALTERNATIVE_DATE"));
+		}
+		
 		// cache sites
 		Map<Long,Site> siteMap = new HashMap<>();
 		for( Site s : sites ) {
@@ -269,26 +294,30 @@ public class CampgroundCLI {
 			System.out.format(format, siteNumber, maxOccup, accessible, maxRVLength, utility, cost);
 		}
 		
-		long siteID;
+		long siteNumber;
 		System.out.println();
 		do {
-			siteID = input.getLong(strings.get("WHICH_SITE_RESERVED"));
-			if( !siteMap.containsKey(siteID) && siteID != 0 ) {
-				System.out.println(strings.get("INVALID_SITE"));
-				siteID = -1;
+			siteNumber = input.getLong(strings.get("WHICH_SITE_RESERVED"));
+			if( !siteMap.containsKey(siteNumber) && siteNumber != 0 ) {
+				System.err.println(strings.get("INVALID_SITE"));
+				siteNumber = -1;
 			}
-		} while( siteID < 0 );
-		if( siteID == 0 ) {
-			return;
+		} while( siteNumber < 0 );
+		if( siteNumber == 0 ) {
+			return false;
 		}
 		String reservationName;
 		do {
 			reservationName = input.getString(strings.get("RESERVATION_NAME"));
+			if( reservationName.trim().isEmpty() ) {
+				System.err.println(strings.get("INVALID_RESERVATION_NAME"));
+			}
 		} while( reservationName.trim().isEmpty() );
 		
+		menu.cls();
 		long confirmationID;
 		try {
-			confirmationID = reservationDAO.makeReservation(siteID, reservationName, arrivalDate, departureDate);
+			confirmationID = reservationDAO.makeReservation(siteMap.get(siteNumber).getSiteID(), reservationName, arrivalDate, departureDate);
 			
 			System.out.format(strings.get("CONFIRMATION_NUMBER"), confirmationID);
 			System.out.println("\n\n");
@@ -296,6 +325,8 @@ public class CampgroundCLI {
 			System.out.format(strings.get(e.getID()), e.getObjects());
 			System.out.println();
 		}
+		
+		return false;
 	}
 	
 	private String wrap(String longString, int width) {

@@ -30,6 +30,7 @@ public class Menu {
 	private Object getChoiceFromUserInput(Object[] options) {
 		Object choice = null;
 		String userInput = in.nextLine();
+		cls();
 		try {
 			int selectedOption = Integer.valueOf(userInput);
 			if(selectedOption <= options.length) {
@@ -50,6 +51,7 @@ public class Menu {
 		displayMenuOptions(quitMessage, options);
 		out.flush();
 		String userInput = in.nextLine();
+		cls();
 		return userInput;
 	}
 	
@@ -73,6 +75,12 @@ public class Menu {
 			out.format("%s) %s\n", quitMessage.substring(0,1).toUpperCase(), quitMessage);
 		}
 		out.format("\n%s >>> \n", choiceOptionMessage);
+		out.flush();
+	}
+	public void cls() {
+		for( int i=0; i<100; i++ ) {
+			out.println();
+		}
 		out.flush();
 	}
 }
