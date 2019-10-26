@@ -1,5 +1,6 @@
 <stringfile>
 <string id="MAIN_MENU_MESSAGE">Select a Park for Further Details</string>
+<string id="COMMAND_MESSAGE">Select a Command</string>
 <string id="SELECT_OPTION">Please choose an option</string>
 <string id="INVALID_OPTION">%s is not a valid option</string>
 <string id="INVALID_CAMPGROUND">Invalid campground entered</string>
@@ -51,8 +52,10 @@
 <string id="YES">Yes</string>
 <string id="NO">No</string>
 <string id="NA">N/A</string>
+<string id="NATIONAL_PARK">National Park</string>
 <string id="WHICH_SITE_RESERVED">Which site should be reserved (enter 0 to cancel)?</string>
 <string id="RESERVATION_NAME">What name should the reservation be made under?</string>
 <string id="CONFIRMATION_NUMBER">The reservation has been made and the confirmation id is %d</string>
 <string id="CAMPGROUND">Campground</string>
+<string id="CAMPGROUNDS">Campgrounds</string>
 </stringfile>
