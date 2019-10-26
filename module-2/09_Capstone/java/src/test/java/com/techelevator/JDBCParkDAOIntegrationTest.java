@@ -44,7 +44,7 @@ public class JDBCParkDAOIntegrationTest extends DAOIntegrationTest {
 
 		dt = LocalDate.parse("1988-04-01", dtf);
 		test_Park_Id = jdbcTemplate.queryForObject(sqlInsertPark, Long.TYPE, "Coal Branch Creek", "PA", dt, 21000, 3900,
-				"This park wooden reclaimed mining area near Reading PA");
+				"This park is woodlands, reclaimed mining area near Reading PA");
 	}
 
 	@Test
