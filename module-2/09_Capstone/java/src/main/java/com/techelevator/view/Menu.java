@@ -66,13 +66,12 @@ public class Menu {
 		displayMenuOptions(null, options);
 	}
 	private void displayMenuOptions(String quitMessage, Object[] options) {
-		out.println();
 		for(int i = 0; i < options.length; i++) {
 			int optionNum = i+1;
-			out.println(optionNum+") "+options[i]);
+			out.format("   %d) %s\n", optionNum, options[i]);
 		}
 		if( quitMessage != null && quitMessage.length() > 0 ) {
-			out.format("%s) %s\n", quitMessage.substring(0,1).toUpperCase(), quitMessage);
+			out.format("   %s) %s\n", quitMessage.substring(0,1).toUpperCase(), quitMessage);
 		}
 		out.format("\n%s >>> \n", choiceOptionMessage);
 		out.flush();

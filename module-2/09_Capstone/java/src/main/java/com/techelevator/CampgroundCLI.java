@@ -36,6 +36,7 @@ public class CampgroundCLI {
 	private Map<Integer,String> monthNames = new HashMap<>();
 	
 	private final static int SPACE_BETWEEN_COLUMNS = 3;
+	private final static int WRAP_WIDTH = 90;
 
 	private Menu menu;
 	private UserInput input;
@@ -121,23 +122,40 @@ public class CampgroundCLI {
 				          strings.get("ANNUAL_VISITORS").length()) + 2; // 2 for ': '
 		String columnFormat = String.format("%%-%ds: ", padding);
 		
-		String output = String.format("%%s\n%s%%s\n%s%%s\n%s%%s %%s\n%s%%s\n\n%%s", columnFormat, columnFormat, columnFormat, columnFormat);
-		output = String.format(output, park.getName(), 
+		String parkName = park.getName();
+		
+		if( !parkName.toLowerCase().endsWith("park") ) {
+			parkName = String.format("%s %s", parkName, strings.get("NATIONAL_PARK"));
+		}
+		
+		String output = String.format("%%s\n%s%%s\n%s%%s\n%s%%s %%s\n%s%%s\n\n%%s\n", columnFormat, columnFormat, columnFormat, columnFormat);
+		output = String.format(output, parkName, 
 									   strings.get("LOCATION"), park.getLocation(),
 									   strings.get("ESTABLISHED"), park.getEstablishedDate().format(DateTimeFormatter.ofPattern("MM/dd/yyyy")),
 									   strings.get("AREA"), NumberFormat.getIntegerInstance().format(park.getArea()), strings.get("SQKM"),
 									   strings.get("ANNUAL_VISITORS"), NumberFormat.getIntegerInstance().format(park.getVisitors()),
-									   wrap(park.getDescription(), 80)
+									   wrap(park.getDescription(), WRAP_WIDTH)
 		);
 
-		System.out.print(output);
+		System.out.println(output);
 		do {
+			System.out.println(strings.get("COMMAND_MESSAGE"));
 			String choice = (String)menu.getChoiceFromOptions(strings.get("VIEW_CAMPGROUNDS"), strings.get("SEARCH_FOR_RESERVATION"), strings.get("RETURN_PREVIOUS_SCREEN") );
 			
 			if( choice.equals(strings.get("VIEW_CAMPGROUNDS")) ) {
+				// title
+				parkName = park.getName(); // reuse parkName variable
+				if( !parkName.toLowerCase().endsWith("park") ) {
+					parkName = String.format("%s %s %s", parkName, strings.get("NATIONAL_PARK"), strings.get("CAMPGROUNDS"));
+				}
+				System.out.println(parkName);
+				System.out.println();
+				
 				showCampgrounds(park);
+				System.out.println();
 			} else if( choice.equals(strings.get("SEARCH_FOR_RESERVATION")) ) {
 				showCampgroundMenu(park);
+				menu.cls();
 			} else {
 				break;
 			}
@@ -342,9 +360,11 @@ public class CampgroundCLI {
 			} else {
 				resultString.append(lineString.trim());
 				resultString.append("\n");
-				lineString = "";
+				lineString = splitString[i] + " ";
 			}
 		}
+		
+		resultString.append(lineString);
 
 	    return resultString.toString();
 	}
