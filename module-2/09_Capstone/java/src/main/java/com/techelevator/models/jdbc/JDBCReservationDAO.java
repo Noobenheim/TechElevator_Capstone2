@@ -13,6 +13,7 @@ import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import com.techelevator.exceptions.ReservationException;
 import com.techelevator.models.ReservationDAO;
+import com.techelevator.models.Reservation;
 import com.techelevator.models.Site;
 
 public class JDBCReservationDAO implements ReservationDAO {
@@ -115,6 +116,33 @@ public class JDBCReservationDAO implements ReservationDAO {
 		throw new ReservationException("UNKNOWN_ERROR");
 	}
 
+	private <list> Reservation showReservations30DaysOut() {
+		List<Reservation> reservation = new ArrayList<>();
+		String sqlReservation = "SELECT * FROM reservation " + 
+				"WHERE from_date BETWEEN NOW() AND (NOW() + INTERVAL '30 day')" + 
+				" ORDER BY from_date";
+		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReservation);
+		
+		while (results.next()) {
+			reservation.add(mapRowToReservation(results));
+		}
+			
+		return null;
+	}
+	
+	private Reservation mapRowToReservation(SqlRowSet results) {
+		Reservation reservationPlus30 = new Reservation();
+		
+		reservationPlus30.setReservationID(results.getLong("reservation_id"));
+		reservationPlus30.setSiteID(results.getLong("site_id"));
+		reservationPlus30.setName(results.getString("name"));
+		reservationPlus30.setFromDate(LocalDate.parse(results.getString("from_date")));
+		reservationPlus30.setToDate(LocalDate.parse(results.getString("to_date")));
+		reservationPlus30.setCreateDate(LocalDate.parse(results.getString("create_date")));
+		
+		return reservationPlus30;
+	}
+	
 	private Site mapRowToSite(SqlRowSet results) {
 		Site site = new Site();
 		
