@@ -46,4 +46,9 @@ public class UserInput {
 	public String getString(String message) {
 		return displayAndGet(message);
 	}
+	public boolean getBoolean(String message) {
+		String line = displayAndGet(message).toLowerCase();
+		
+		return line.equals("1") || line.equals("true") || line.equals("yes");
+	}
 }

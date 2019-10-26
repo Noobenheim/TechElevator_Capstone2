@@ -7,6 +7,9 @@
 <string id="INVALID_DATE">Invalid date entered</string>
 <string id="INVALID_RESERVATION_DATE">Date range (%s - %s) is not available for reservation</string>
 <string id="INVALID_RESERVATION_SITE">Unknown site ID : %d</string>
+<string id="INVALID_RESERVATION_NAME">Reservation name cannot be blank.</string>
+<string id="NO_RESERVATIONS_AVAILABLE">There are no reservations available between %s and %s</string>
+<string id="ASK_ALTERNATIVE_DATE">Would you like to enter an alternatate date range?</string>
 <string id="UNKNOWN_ERROR">An unknown error has occurred.</string>
 <string id="QUIT">quit</string>
 <string id="LOCATION">Location</string>
