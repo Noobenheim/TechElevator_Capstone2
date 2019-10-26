@@ -57,7 +57,7 @@ public class JDBCParkDAO implements ParkDAO {
 		thePark = new Park();
 		thePark.setParkID(results.getLong("park_id"));
 		thePark.setName(results.getString("name"));
-		thePark.setLocation("location");
+		thePark.setLocation(results.getString("location"));
 
 		String tempDateString = results.getString("establish_date");
 		if (tempDateString != null) {
