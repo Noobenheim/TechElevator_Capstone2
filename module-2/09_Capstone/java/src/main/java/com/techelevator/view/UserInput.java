@@ -49,6 +49,6 @@ public class UserInput {
 	public boolean getBoolean(String message) {
 		String line = displayAndGet(message).toLowerCase();
 		
-		return line.equals("1") || line.equals("true") || line.equals("yes");
+		return line.equals("1") || line.equals("true") || line.equals("yes") || line.equals("y");
 	}
 }
