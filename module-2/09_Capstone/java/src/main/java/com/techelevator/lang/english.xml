@@ -65,4 +65,5 @@
 <string id="REQUIREMENT_RV_LENGTH">What is the length of the RV?</string>
 <string id="REQUIREMENT_UTILITY">Is a utility hoopup required?</string>
 <string id="REQUIREMENT_SKIPPED">(just press enter if not a requirement)</string>
+<string id="GOODBYE">Thank you for using the National Park Reservation System</string>
 </stringfile>

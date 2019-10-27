@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import javax.sql.DataSource;
 import javax.xml.parsers.ParserConfigurationException;
@@ -82,10 +82,18 @@ public class CampgroundCLI {
 		monthNames.put(10,strings.get("OCTOBER"));
 		monthNames.put(11,strings.get("NOVEMBER"));
 		monthNames.put(12,strings.get("DECEMBER"));
+		
+		setupHeader();
 	}
 
 	public void run() {
-		showMainMenu();
+		try {
+			showMainMenu();
+		} catch( NoSuchElementException e ) {
+			// user exited without menu option while trying to read line
+		} finally {
+			System.out.println(strings.get("GOODBYE"));
+		}
 	}
 	
 	private void showMainMenu() {
@@ -155,7 +163,6 @@ public class CampgroundCLI {
 				System.out.println();
 			} else if( choice.equals(strings.get("SEARCH_FOR_RESERVATION")) ) {
 				showCampgroundMenu(park);
-				menu.cls();
 			} else {
 				break;
 			}
@@ -223,6 +230,7 @@ public class CampgroundCLI {
 			}
 		} while(campgroundID < 0 );
 		if( campgroundID == 0 ) {
+			menu.cls();
 			return;
 		}
 		boolean repeatDate;
@@ -299,7 +307,7 @@ public class CampgroundCLI {
 		}
 		
 		// parse requirements
-		Integer personCapacity = (Integer)requirements.get("people");
+		Long personCapacity = (Long)requirements.get("people");
 		Boolean needsWheelchairAccess = (Boolean)requirements.get("wheelchair");
 		Integer rvLengthRequired = (Integer)requirements.get("rv");
 		Boolean needsUtility = (Boolean)requirements.get("utility");
@@ -348,16 +356,17 @@ public class CampgroundCLI {
 			System.out.format(format, siteNumber, maxOccup, accessible, maxRVLength, utility, cost);
 		}
 		
-		long siteNumber;
+		Long siteNumber;
 		System.out.println();
 		do {
 			siteNumber = input.getLong(strings.get("WHICH_SITE_RESERVED"));
-			if( !siteMap.containsKey(siteNumber) && siteNumber != 0 ) {
+			if( siteNumber == null || (!siteMap.containsKey(siteNumber) && siteNumber != 0) ) {
 				System.err.println(strings.get("INVALID_SITE"));
-				siteNumber = -1;
+				siteNumber = -1L;
 			}
 		} while( siteNumber < 0 );
 		if( siteNumber == 0 ) {
+			menu.cls();
 			return false;
 		}
 		String reservationName;
@@ -412,5 +421,30 @@ public class CampgroundCLI {
 				ret = numbers[i];
 		}
 		return ret;
+	}
+	
+	private void setupHeader() {
+		String header = "███╗   ██╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗ █████╗ ██╗         ██████╗  █████╗ ██████╗ ██╗  ██╗\n" + 
+				"████╗  ██║██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔══██╗██║         ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝\n" + 
+				"██╔██╗ ██║███████║   ██║   ██║██║   ██║██╔██╗ ██║███████║██║         ██████╔╝███████║██████╔╝█████╔╝ \n" + 
+				"██║╚██╗██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║██╔══██║██║         ██╔═══╝ ██╔══██║██╔══██╗██╔═██╗ \n" + 
+				"██║ ╚████║██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║██║  ██║███████╗    ██║     ██║  ██║██║  ██║██║  ██╗\n" + 
+				"╚═╝  ╚═══╝╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝    ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝\n" + 
+				"                                                                                                     \n" + 
+				"        ██████╗ ███████╗███████╗███████╗██████╗ ██╗   ██╗ █████╗ ████████╗██╗ ██████╗ ███╗   ██╗     \n" + 
+				"        ██╔══██╗██╔════╝██╔════╝██╔════╝██╔══██╗██║   ██║██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║     \n" + 
+				"        ██████╔╝█████╗  ███████╗█████╗  ██████╔╝██║   ██║███████║   ██║   ██║██║   ██║██╔██╗ ██║     \n" + 
+				"        ██╔══██╗██╔══╝  ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██╔══██║   ██║   ██║██║   ██║██║╚██╗██║     \n" + 
+				"        ██║  ██║███████╗███████║███████╗██║  ██║ ╚████╔╝ ██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║     \n" + 
+				"        ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝     \n" + 
+				"                                                                                                     \n" + 
+				"                            ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗                    \n" + 
+				"                            ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║                    \n" + 
+				"                            ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║                    \n" + 
+				"                            ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║                    \n" + 
+				"                            ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║                    \n" + 
+				"                            ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝                    \n" + 
+				"                                                                                                     ";
+		menu.setHeader(header);
 	}
 }
