@@ -66,4 +66,11 @@
 <string id="REQUIREMENT_UTILITY">Is a utility hoopup required?</string>
 <string id="REQUIREMENT_SKIPPED">(just press enter if not a requirement)</string>
 <string id="GOODBYE">Thank you for using the National Park Reservation System</string>
+<string id="VIEW_RESERVATIONS_30">View Reservations for Next 30 Days</string>
+<string id="CONFIRMATION">Confirmation</string>
+<string id="FROM">From</string>
+<string id="TO">To</string>
+<string id="SITE">Site</string>
+<string id="INVALID_RESERVATION_NAME_LENGTH">Reservation name can only be up to %d characters.</string>
+<string id="NO_RESERVATIONS_NEXT_30">There are no reservations in the next 30 days.</string>
 </stringfile>

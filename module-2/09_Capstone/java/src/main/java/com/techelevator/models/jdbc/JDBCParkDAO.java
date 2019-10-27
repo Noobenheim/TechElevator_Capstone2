@@ -1,7 +1,5 @@
 package com.techelevator.models.jdbc;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,9 +16,11 @@ import com.techelevator.models.ParkDAO;
 public class JDBCParkDAO implements ParkDAO {
 	
 	private JdbcTemplate jdbcTemplate;
+	private JDBCObjectHelperDAO objectHelper;
 	
 	public JDBCParkDAO(DataSource dataSource) {
 		jdbcTemplate = new JdbcTemplate(dataSource);
+		objectHelper = new JDBCObjectHelperDAO(dataSource);
 	}
 
 	@Override
@@ -31,7 +31,7 @@ public class JDBCParkDAO implements ParkDAO {
 		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReturnAllParks);
 		
 		while (results.next()) {
-			Park thePark = mapRowToPark(results);
+			Park thePark = objectHelper.mapRowToPark(results);
 			parks.add(thePark);
 		}
 
@@ -47,44 +47,9 @@ public class JDBCParkDAO implements ParkDAO {
 		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReturnAllCampSitesForPark, parkID);
 		
 		while (results.next()) {
-			Campground theCamp = mapRowToCamp(results);
+			Campground theCamp = objectHelper.mapRowToCampground(results);
 			campgrounds.add(theCamp);
 		}
 		return campgrounds;
 	}
-	
-	private Park mapRowToPark(SqlRowSet results) {
-		Park thePark;
-		thePark = new Park();
-		thePark.setParkID(results.getLong("park_id"));
-		thePark.setName(results.getString("name"));
-		thePark.setLocation(results.getString("location"));
-
-		String tempDateString = results.getString("establish_date");
-		if (tempDateString != null) {
-			LocalDate tempDate = LocalDate.parse(tempDateString, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-			thePark.setEstablishedDate(tempDate);
-		}
-		
-		thePark.setArea(results.getLong("area"));
-		thePark.setVisitors(results.getLong("visitors"));
-		thePark.setDescription(results.getString("description"));
-		
-		return thePark;
-	
-	}
-	
-	private Campground mapRowToCamp(SqlRowSet results) {
-		Campground theCamp;
-		theCamp = new Campground();
-		theCamp.setCampgroundID(results.getLong("campground_id"));
-		theCamp.setParkID(results.getLong("park_id"));
-		theCamp.setName(results.getString("name"));
-		theCamp.setOpenFromMonth(results.getInt("open_from_mm"));
-		theCamp.setOpenToMonth(results.getInt("open_to_mm"));
-		theCamp.setFee((int)(results.getDouble("daily_fee")*100.0));
-		
-		return theCamp;
-	}
-
 }

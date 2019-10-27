@@ -12,17 +12,20 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import com.techelevator.exceptions.ReservationException;
-import com.techelevator.models.ReservationDAO;
+import com.techelevator.models.Park;
 import com.techelevator.models.Reservation;
+import com.techelevator.models.ReservationDAO;
 import com.techelevator.models.Site;
 
 public class JDBCReservationDAO implements ReservationDAO {
 	private final static int AVAILABLE_RESERVATIONS_LIMIT = 5;
 
 	private JdbcTemplate jdbcTemplate;
+	private JDBCObjectHelperDAO objectHelper;
 	
 	public JDBCReservationDAO(DataSource dataSource) {
 		jdbcTemplate = new JdbcTemplate(dataSource);
+		objectHelper = new JDBCObjectHelperDAO(dataSource);
 	}
 	
 	@Override
@@ -80,7 +83,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReservations, replacements.toArray(new Object[replacements.size()]));
 		
 		while( results.next() ) {
-			available.add(mapRowToSite(results));
+			available.add(objectHelper.mapRowToSite(results));
 		}
 		return available;
 	}
@@ -116,44 +119,23 @@ public class JDBCReservationDAO implements ReservationDAO {
 		throw new ReservationException("UNKNOWN_ERROR");
 	}
 
-	public List<Reservation> showReservations30DaysOut() {
+	@Override
+	public List<Reservation> showFutureReservations(Park park, int days) {
 		List<Reservation> reservation = new ArrayList<>();
-		String sqlReservation = "SELECT * FROM reservation " + 
-				"WHERE from_date BETWEEN NOW() AND (NOW() + INTERVAL '30 day')" + 
-				" ORDER BY from_date";
-		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReservation);
+		String sqlReservation = "SELECT reservation_id, site_id, reservation.name, from_date, to_date, create_date FROM reservation " + 
+				"JOIN site USING(site_id) " +
+				"JOIN campground USING(campground_id) " +
+				"JOIN park USING(park_id) " +
+				"WHERE (from_date BETWEEN NOW() AND (NOW() + CAST( ? || ' day' AS INTERVAL)) " + 
+				"OR to_date BETWEEN NOW() AND (NOW() + CAST( ? || ' day' AS INTERVAL))) " +
+				"AND park_id = ? " +
+				"ORDER BY from_date";
+		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReservation, days, days, park.getParkID());
 		
 		while (results.next()) {
-			reservation.add(mapRowToReservation(results));
+			reservation.add(objectHelper.mapRowToReservation(results));
 		}
 			
 		return reservation;
-	}
-	
-	private Reservation mapRowToReservation(SqlRowSet results) {
-		Reservation reservation = new Reservation();
-		
-		reservation.setReservationID(results.getLong("reservation_id"));
-		reservation.setSiteID(results.getLong("site_id"));
-		reservation.setName(results.getString("name"));
-		reservation.setFromDate(results.getDate("from_date").toLocalDate());
-		reservation.setToDate(results.getDate("to_date").toLocalDate());
-		reservation.setCreateDate(results.getDate("create_date").toLocalDate());
-		
-		return reservation;
-	}
-	
-	private Site mapRowToSite(SqlRowSet results) {
-		Site site = new Site();
-		
-		site.setSiteID(results.getLong("site_id"));
-		site.setCampgroundID(results.getLong("campground_id"));
-		site.setSiteNumber(results.getLong("site_number"));
-		site.setMaxOccupancy(results.getLong("max_occupancy"));
-		site.setAccessible(results.getBoolean("accessible"));
-		site.setMaxRVLength(results.getInt("max_rv_length"));
-		site.setUtilities(results.getBoolean("utilities"));
-		
-		return site;
 	}
 }

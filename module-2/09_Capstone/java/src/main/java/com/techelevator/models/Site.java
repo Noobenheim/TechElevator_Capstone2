@@ -1,12 +1,15 @@
 package com.techelevator.models;
 
-public class Site {
+public class Site extends NationalParkPOJO {
 	private Long siteID;
 	private Long campgroundID;
 	private Long siteNumber;
 	private Long maxOccupancy;
 	private Boolean accessible;
 	private Integer maxRVLength;
+	private Boolean utilities;
+	
+	private Campground campground;
 	
 	public Long getSiteID() {
 		return siteID;
@@ -50,5 +53,13 @@ public class Site {
 	public void setUtilities(Boolean utilities) {
 		this.utilities = utilities;
 	}
-	private Boolean utilities;
+	public Campground getCampground() {
+		return campground;
+	}
+	public void setCampground(Campground campground) {
+		this.campground = campground;
+	}
+	public NationalParkPOJO getParent() {
+		return getCampground();
+	}
 }
