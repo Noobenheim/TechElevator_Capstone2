@@ -1,27 +1,16 @@
 package com.techelevator;
 
-import java.sql.SQLException;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.sql.DataSource;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
-import com.techelevator.models.Park;
-import com.techelevator.models.Reservation;
+import com.techelevator.models.Campground;
 import com.techelevator.models.Site;
-import com.techelevator.models.jdbc.JDBCParkDAO;
+import com.techelevator.models.jdbc.JDBCObjectHelperDAO;
 import com.techelevator.models.jdbc.JDBCReservationDAO;
 
 public class JDBCReservationDAOIntegrationTest extends DAOIntegrationTest {
@@ -32,6 +21,8 @@ public class JDBCReservationDAOIntegrationTest extends DAOIntegrationTest {
 	private String beginDate = "2019-11-02"; 
 	private String endDate = "2019-11-05";
 	
+	private JDBCObjectHelperDAO objectHelper = new JDBCObjectHelperDAO(dataSource);
+	
 	@Before
 	public void setup() {
 		dao = new JDBCReservationDAO(dataSource);
@@ -39,8 +30,8 @@ public class JDBCReservationDAOIntegrationTest extends DAOIntegrationTest {
 	
 	@Test
 	public void testGetAvailableReservations() {
-		
-		List<Site> testRes = dao.getAvailableReservations(1, beginDate, endDate);
+		Campground campground = objectHelper.getCampgroundByID(1);
+		List<Site> testRes = dao.getAvailableReservations(campground, beginDate, endDate);
 		
 		boolean test = false;
 		

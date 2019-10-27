@@ -101,12 +101,10 @@ public class JDBCObjectHelperDAO implements ObjectHelperDAO {
 
 	@Override
 	public void mapCampgroundToSite(Site site) {
-		String sqlCampground = "SELECT campground_id, park_id, name, open_from_mm, open_to_mm, daily_fee " +
-							   "FROM campground WHERE campground_id = ?";
-		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlCampground, site.getCampgroundID());
+		Campground campground = getCampgroundByID(site.getCampgroundID());
 		
-		if( results.next() ) {
-			site.setCampground(mapRowToCampground(results));
+		if( campground != null ) {
+			site.setCampground(campground);
 		}
 	}
 
@@ -121,6 +119,18 @@ public class JDBCObjectHelperDAO implements ObjectHelperDAO {
 		}
 	}
 
+	@Override
+	public Campground getCampgroundByID(long campgroundID) {
+		String sqlCampground = "SELECT campground_id, park_id, name, open_from_mm, open_to_mm, daily_fee " +
+							   "FROM campground WHERE campground_id = ?";
+		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlCampground, campgroundID);
+		
+		if( results.next() ) {
+			return mapRowToCampground(results);
+		}
+		return null;
+	}
+	
 	@Override
 	public void ensureClassExists(NationalParkObject npo, Class<?> c) {
 		if( !validClasses.contains(c) ) {

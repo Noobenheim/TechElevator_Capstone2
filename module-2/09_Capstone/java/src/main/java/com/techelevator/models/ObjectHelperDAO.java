@@ -12,5 +12,7 @@ public interface ObjectHelperDAO {
 	public void mapCampgroundToSite(Site site);
 	public void mapParkToCampground(Campground campground);
 	
+	public Campground getCampgroundByID(long campgroundID);
+	
 	public void ensureClassExists(NationalParkObject o, Class<?> c);
 }

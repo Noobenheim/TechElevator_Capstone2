@@ -73,4 +73,5 @@
 <string id="SITE">Site</string>
 <string id="INVALID_RESERVATION_NAME_LENGTH">Reservation name can only be up to %d characters.</string>
 <string id="NO_RESERVATIONS_NEXT_30">There are no reservations in the next 30 days.</string>
+<string id="CAMPGROUND_NAME">Campground Name</string>
 </stringfile>
