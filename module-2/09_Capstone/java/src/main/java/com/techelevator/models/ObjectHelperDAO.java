@@ -12,5 +12,5 @@ public interface ObjectHelperDAO {
 	public void mapCampgroundToSite(Site site);
 	public void mapParkToCampground(Campground campground);
 	
-	public void ensureClassExists(NationalParkPOJO o, Class<?> c);
+	public void ensureClassExists(NationalParkObject o, Class<?> c);
 }

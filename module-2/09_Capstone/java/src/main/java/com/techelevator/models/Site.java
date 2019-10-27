@@ -1,6 +1,6 @@
 package com.techelevator.models;
 
-public class Site extends NationalParkPOJO {
+public class Site extends NationalParkObject {
 	private Long siteID;
 	private Long campgroundID;
 	private Long siteNumber;
@@ -59,7 +59,7 @@ public class Site extends NationalParkPOJO {
 	public void setCampground(Campground campground) {
 		this.campground = campground;
 	}
-	public NationalParkPOJO getParent() {
+	public NationalParkObject getParent() {
 		return getCampground();
 	}
 }

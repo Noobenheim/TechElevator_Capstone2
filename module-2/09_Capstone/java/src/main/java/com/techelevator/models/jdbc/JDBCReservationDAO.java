@@ -129,7 +129,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 				"WHERE (from_date BETWEEN NOW() AND (NOW() + CAST( ? || ' day' AS INTERVAL)) " + 
 				"OR to_date BETWEEN NOW() AND (NOW() + CAST( ? || ' day' AS INTERVAL))) " +
 				"AND park_id = ? " +
-				"ORDER BY from_date";
+				"ORDER BY park_id, campground_id, site_id, from_date, to_date";
 		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlReservation, days, days, park.getParkID());
 		
 		while (results.next()) {

@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import com.techelevator.models.Campground;
-import com.techelevator.models.NationalParkPOJO;
+import com.techelevator.models.NationalParkObject;
 import com.techelevator.models.ObjectHelperDAO;
 import com.techelevator.models.Park;
 import com.techelevator.models.Reservation;
@@ -122,7 +122,7 @@ public class JDBCObjectHelperDAO implements ObjectHelperDAO {
 	}
 
 	@Override
-	public void ensureClassExists(NationalParkPOJO npo, Class<?> c) {
+	public void ensureClassExists(NationalParkObject npo, Class<?> c) {
 		if( !validClasses.contains(c) ) {
 			return;
 		}
@@ -145,7 +145,7 @@ public class JDBCObjectHelperDAO implements ObjectHelperDAO {
 	}
 	
 	// one level check
-	private void fillMap(NationalParkPOJO npo, Class<?> c) {
+	private void fillMap(NationalParkObject npo, Class<?> c) {
 		if( c == Site.class && npo instanceof Reservation ) {
 			Reservation r = (Reservation)npo;
 			if( r.getSite() == null ) {

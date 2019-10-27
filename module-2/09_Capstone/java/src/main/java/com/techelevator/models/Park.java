@@ -2,7 +2,7 @@ package com.techelevator.models;
 
 import java.time.LocalDate;
 
-public class Park extends NationalParkPOJO {
+public class Park extends NationalParkObject {
 	private Long parkID;
 	private String name;
 	private String location;
@@ -53,7 +53,7 @@ public class Park extends NationalParkPOJO {
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	public NationalParkPOJO getParent() {
+	public NationalParkObject getParent() {
 		return null;
 	}
 }
