@@ -13,6 +13,8 @@ public class Menu {
 	private String invalidOptionMessage = "%s";
 	private String choiceOptionMessage = "";
 	
+	private String header = null;
+	
 	public Menu(InputStream input, OutputStream output) {
 		this.out = new PrintWriter(output);
 		this.in = new Scanner(input);
@@ -76,9 +78,23 @@ public class Menu {
 		out.format("\n%s >>> \n", choiceOptionMessage);
 		out.flush();
 	}
+	
+	public void setHeader(String header) {
+		this.header = header;
+	}
+	public void clearHeader() {
+		this.header = null;
+	}
+	public String getHeader() {
+		return this.header;
+	}
+	
 	public void cls() {
 		for( int i=0; i<100; i++ ) {
 			out.println();
+		}
+		if( this.header != null ) {
+			out.println(this.header);
 		}
 		out.flush();
 	}

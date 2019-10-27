@@ -30,13 +30,13 @@ public class JDBCReservationDAO implements ReservationDAO {
 		return getAvailableReservations(campgroundID, startDate, endDate, AVAILABLE_RESERVATIONS_LIMIT, null, null, null, null);
 	}
 	@Override
-	public List<Site> getAvailableReservations(long campgroundID, String startDate, String endDate, Integer personCapacity, Boolean needsWheelchairAccess, Integer rvLengthRequired, Boolean needsUtility) {
+	public List<Site> getAvailableReservations(long campgroundID, String startDate, String endDate, Long personCapacity, Boolean needsWheelchairAccess, Integer rvLengthRequired, Boolean needsUtility) {
 		return getAvailableReservations(campgroundID, startDate, endDate, AVAILABLE_RESERVATIONS_LIMIT, personCapacity, needsWheelchairAccess, rvLengthRequired, needsUtility);
 	}
 	public List<Site> getAvailableReservations(long campgroundID, String startDate, String endDate, int limit) {
 		return getAvailableReservations(campgroundID, startDate, endDate, limit, null, null, null, null);
 	}
-	public List<Site> getAvailableReservations(long campgroundID, String startDate, String endDate, int limit, Integer personCapacity, Boolean needsWheelchairAccess, Integer rvLengthRequired, Boolean needsUtility) {
+	public List<Site> getAvailableReservations(long campgroundID, String startDate, String endDate, int limit, Long personCapacity, Boolean needsWheelchairAccess, Integer rvLengthRequired, Boolean needsUtility) {
 		List<Site> available = new ArrayList<>();
 		String sqlReservations = " SELECT site_id, campground_id, site_number, max_occupancy, accessible, max_rv_length, utilities " +
 				"FROM site " + 
@@ -58,7 +58,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 		
 		// parse advanced search
 		if( personCapacity != null && personCapacity > 0 ) {
-			sqlReservations += "AND maximum_occupancy >= ? ";
+			sqlReservations += "AND max_occupancy >= ? ";
 			replacements.add(personCapacity);
 		}
 		if( needsWheelchairAccess != null && needsWheelchairAccess ) {
@@ -69,7 +69,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 			replacements.add(rvLengthRequired);
 		}
 		if( needsUtility != null && needsUtility ) {
-			sqlReservations += "AND utility = true ";
+			sqlReservations += "AND utilities = true ";
 		}
 		
 		sqlReservations += "ORDER BY site_number ASC ";
@@ -116,7 +116,7 @@ public class JDBCReservationDAO implements ReservationDAO {
 		throw new ReservationException("UNKNOWN_ERROR");
 	}
 
-	private <list> Reservation showReservations30DaysOut() {
+	public List<Reservation> showReservations30DaysOut() {
 		List<Reservation> reservation = new ArrayList<>();
 		String sqlReservation = "SELECT * FROM reservation " + 
 				"WHERE from_date BETWEEN NOW() AND (NOW() + INTERVAL '30 day')" + 
@@ -127,20 +127,20 @@ public class JDBCReservationDAO implements ReservationDAO {
 			reservation.add(mapRowToReservation(results));
 		}
 			
-		return null;
+		return reservation;
 	}
 	
 	private Reservation mapRowToReservation(SqlRowSet results) {
-		Reservation reservationPlus30 = new Reservation();
+		Reservation reservation = new Reservation();
 		
-		reservationPlus30.setReservationID(results.getLong("reservation_id"));
-		reservationPlus30.setSiteID(results.getLong("site_id"));
-		reservationPlus30.setName(results.getString("name"));
-		reservationPlus30.setFromDate(LocalDate.parse(results.getString("from_date")));
-		reservationPlus30.setToDate(LocalDate.parse(results.getString("to_date")));
-		reservationPlus30.setCreateDate(LocalDate.parse(results.getString("create_date")));
+		reservation.setReservationID(results.getLong("reservation_id"));
+		reservation.setSiteID(results.getLong("site_id"));
+		reservation.setName(results.getString("name"));
+		reservation.setFromDate(results.getDate("from_date").toLocalDate());
+		reservation.setToDate(results.getDate("to_date").toLocalDate());
+		reservation.setCreateDate(results.getDate("create_date").toLocalDate());
 		
-		return reservationPlus30;
+		return reservation;
 	}
 	
 	private Site mapRowToSite(SqlRowSet results) {
