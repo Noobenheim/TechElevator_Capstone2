@@ -392,6 +392,8 @@ public class CampgroundCLI {
 		return false;
 	}
 	
+
+	
 	private String wrap(String longString, int width) {
 		String[] splitString = longString.split(" ");
 		StringBuilder resultString = new StringBuilder();
