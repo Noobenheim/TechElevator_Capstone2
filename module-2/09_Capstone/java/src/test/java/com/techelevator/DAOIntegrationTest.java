@@ -14,7 +14,7 @@ public abstract class DAOIntegrationTest {
 	/* Using this particular implementation of DataSource so that
 	 * every database interaction is part of the same database
 	 * session and hence the same database transaction */
-	protected static SingleConnectionDataSource dataSource;
+	private static SingleConnectionDataSource dataSource;
 
 	/* Before any tests are run, this method initializes the datasource for testing. */
 	@BeforeClass

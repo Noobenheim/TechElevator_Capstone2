@@ -16,16 +16,16 @@ import com.techelevator.models.jdbc.JDBCReservationDAO;
 public class JDBCReservationDAOIntegrationTest extends DAOIntegrationTest {
 
 	private JDBCReservationDAO dao;
-	JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+	JdbcTemplate jdbcTemplate = new JdbcTemplate(getDataSource());
 	
 	private String beginDate = "2019-11-02"; 
 	private String endDate = "2019-11-05";
 	
-	private JDBCObjectHelperDAO objectHelper = new JDBCObjectHelperDAO(dataSource);
+	private JDBCObjectHelperDAO objectHelper = new JDBCObjectHelperDAO(getDataSource());
 	
 	@Before
 	public void setup() {
-		dao = new JDBCReservationDAO(dataSource);
+		dao = new JDBCReservationDAO(getDataSource());
 	}
 	
 	@Test

@@ -29,8 +29,8 @@ public class JDBCParkDAOIntegrationTest extends DAOIntegrationTest {
 
 	@Before
 	public void setupPark() {
-		dao = new JDBCParkDAO(dataSource);
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		dao = new JDBCParkDAO(getDataSource());
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(getDataSource());
 
 		// creating at Park for testing.
 		String sqlInsertPark = "INSERT INTO park (name, location, establish_date, area, visitors, description) "
