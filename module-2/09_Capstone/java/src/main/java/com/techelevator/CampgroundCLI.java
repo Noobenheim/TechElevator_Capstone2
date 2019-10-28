@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
@@ -21,10 +22,15 @@ import org.xml.sax.SAXException;
 import com.techelevator.exceptions.ReservationException;
 import com.techelevator.lang.Strings;
 import com.techelevator.models.Campground;
+import com.techelevator.models.DatesAndRequirements;
+import com.techelevator.models.NationalParkObject;
+import com.techelevator.models.ObjectHelperDAO;
 import com.techelevator.models.Park;
 import com.techelevator.models.ParkDAO;
+import com.techelevator.models.Reservation;
 import com.techelevator.models.ReservationDAO;
 import com.techelevator.models.Site;
+import com.techelevator.models.jdbc.JDBCObjectHelperDAO;
 import com.techelevator.models.jdbc.JDBCParkDAO;
 import com.techelevator.models.jdbc.JDBCReservationDAO;
 import com.techelevator.view.Menu;
@@ -33,10 +39,12 @@ import com.techelevator.view.UserInput;
 public class CampgroundCLI {
 	private final ParkDAO parkDAO;
 	private final ReservationDAO reservationDAO;
+	private final ObjectHelperDAO objectHelper;
 	private Map<Integer,String> monthNames = new HashMap<>();
 	
 	private final static int SPACE_BETWEEN_COLUMNS = 3;
 	private final static int WRAP_WIDTH = 90;
+	private final static int MAX_RESERVATION_NAME_LENGTH = 80;
 
 	private Menu menu;
 	private UserInput input;
@@ -84,6 +92,8 @@ public class CampgroundCLI {
 		monthNames.put(12,strings.get("DECEMBER"));
 		
 		setupHeader();
+		
+		objectHelper = new JDBCObjectHelperDAO(datasource);
 	}
 
 	public void run() {
@@ -148,7 +158,10 @@ public class CampgroundCLI {
 		System.out.println(output);
 		do {
 			System.out.println(strings.get("COMMAND_MESSAGE"));
-			String choice = (String)menu.getChoiceFromOptions(strings.get("VIEW_CAMPGROUNDS"), strings.get("SEARCH_FOR_RESERVATION"), strings.get("RETURN_PREVIOUS_SCREEN") );
+			String choice = (String)menu.getChoiceFromOptions(
+						strings.get("VIEW_CAMPGROUNDS"), strings.get("SEARCH_FOR_RESERVATION"), 
+						strings.get("VIEW_RESERVATIONS_30"), strings.get("RETURN_PREVIOUS_SCREEN")
+					);
 			
 			if( choice.equals(strings.get("VIEW_CAMPGROUNDS")) ) {
 				// title
@@ -159,16 +172,60 @@ public class CampgroundCLI {
 				System.out.println(parkName);
 				System.out.println();
 				
-				showCampgrounds(park);
+				showCampgroundsMenu(park);
 				System.out.println();
 			} else if( choice.equals(strings.get("SEARCH_FOR_RESERVATION")) ) {
-				showCampgroundMenu(park);
+				showParkReservationMenu(park);
+			} else if( choice.equals(strings.get("VIEW_RESERVATIONS_30")) ) {
+				showViewReservationsMenu(park);
 			} else {
 				break;
 			}
 		} while(true);
 	}
 	
+	private void showViewReservationsMenu(Park park) {
+		List<Reservation> reservations = reservationDAO.showFutureReservations(park, 30);
+		
+		if( reservations.size() == 0 ) {
+			System.out.println(strings.get("NO_RESERVATIONS_NEXT_30"));
+			System.out.println();
+			return;
+		}
+		
+		// get highest lengths
+		int largestName = strings.get("NAME").length();
+		for( Reservation reservation : reservations ) {
+			if( reservation.getName().length() > largestName ) {
+				largestName = reservation.getName().length();
+			}
+		}
+		
+		String format = String.format("%%-%ds%%-%ds%%-%ds%%-%ds%%s\n", 
+				strings.get("CONFIRMATION").length() + SPACE_BETWEEN_COLUMNS,
+				largestName + SPACE_BETWEEN_COLUMNS,
+				10 + SPACE_BETWEEN_COLUMNS, 10 + SPACE_BETWEEN_COLUMNS // YYYY-MM-DD
+			);
+		System.out.format(format, strings.get("CONFIRMATION"), strings.get("NAME"),
+						          strings.get("FROM"), strings.get("TO"), strings.get("LOCATION")
+			);
+		
+		for( Reservation reservation : reservations ) {
+			objectHelper.ensureClassExists(reservation, Park.class);
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("uuuu-MM-dd");
+			
+			String location = String.format("%s %s (%s %s %d)",
+					reservation.getSite().getCampground().getPark().getName(), strings.get("NATIONAL_PARK"),
+					reservation.getSite().getCampground().getName(), strings.get("SITE"), reservation.getSite().getSiteNumber()
+				);
+			
+			System.out.format(format, reservation.getReservationID(), reservation.getName(),
+					reservation.getFromDate().format(formatter), reservation.getToDate().format(formatter),
+					location
+				);
+		}
+		System.out.println();
+	}
 	private void showCampgrounds(Park park) {
 		showCampgrounds(parkDAO.getCampgroundsForPark(park.getParkID()));
 	}
@@ -208,7 +265,25 @@ public class CampgroundCLI {
 		}
 	}
 	
-	private void showCampgroundMenu(Park park) {
+	private void showCampgroundsMenu(Park park) {
+		do {
+			showCampgrounds(park);
+			
+			System.out.println();
+			System.out.println(strings.get("COMMAND_MESSAGE"));
+			String choice = (String)menu.getChoiceFromOptions(
+					strings.get("SEARCH_AVAILABLE_RESERVATION"), strings.get("RETURN_PREVIOUS_SCREEN")
+				);
+			
+			if( choice.equals(strings.get("SEARCH_AVAILABLE_RESERVATION")) ) {
+				showCampgroundReservationMenu(park);
+			} else if( choice.equals(strings.get("RETURN_PREVIOUS_SCREEN")) ) {
+				break;
+			}
+		} while( true );
+	}
+	
+	private void showCampgroundReservationMenu(Park park) {
 		List<Campground> campgrounds = parkDAO.getCampgroundsForPark(park.getParkID());
 		Map<Long,Campground> campgroundIDs = new HashMap<>();
 		
@@ -233,58 +308,88 @@ public class CampgroundCLI {
 			menu.cls();
 			return;
 		}
+		
 		boolean repeatDate;
 		do {
-			SimpleDateFormat arrivalDate = new SimpleDateFormat("MM/dd/yyyy");
-			do {
-				String date = input.getString(strings.get("WHAT_IS_ARRIVAL_DATE"));
-				// validate valid date
-				try {
-					arrivalDate.parse(date);
-					break;
-				} catch( ParseException e ) {
-					System.err.println(strings.get("INVALID_DATE"));
-				}
-			} while(true);
-			SimpleDateFormat departureDate = new SimpleDateFormat("MM/dd/yyyy");
-			do {
-				String date = input.getString(strings.get("WHAT_IS_DEPARTURE_DATE"));
-				// validate valid date
-				try {
-					departureDate.parse(date);
-					break;
-				} catch( ParseException e ) {
-					System.err.println(strings.get("INVALID_DATE"));
-				}
-			} while(true);
-			
-			Boolean additionalRestrictions = input.getBoolean(strings.get("SPECIAL_REQUIREMENTS"));
-			Map<String,Object> requirements = new HashMap<>();
-			if( additionalRestrictions != null && additionalRestrictions ) {
-				Long people = input.getLong("%s %s", strings.get("REQUIREMENT_PEOPLE"), strings.get("REQUIREMENT_SKIPPED"));
-				if( people != null && people > 0 ) {
-					requirements.put("people", people);
-				}
-				Boolean wheelchair = input.getBoolean("%s %s", strings.get("REQUIREMENT_WHEELCHAIR"), strings.get("REQUIREMENT_SKIPPED"));
-				if( wheelchair != null && wheelchair) {
-					requirements.put("wheelchair", wheelchair);
-				}
-				Integer rv = input.getInt("%s %s", strings.get("REQUIREMENT_RV_LENGTH"), strings.get("REQUIREMENT_SKIPPED"));
-				if( rv != null && rv > 0 ) {
-					requirements.put("rv", rv);
-				}
-				Boolean utility = input.getBoolean("%s %s", strings.get("REQUIREMENT_UTILITY"), strings.get("REQUIREMENT_SKIPPED"));
-				if( utility != null && utility ) {
-					requirements.put("utility", utility);
-				}
-			}
-			
-			repeatDate = showReservationMenu(campgroundIDs.get(campgroundID), arrivalDate.getCalendar(), departureDate.getCalendar(), requirements);
+			DatesAndRequirements requirements = getDatesAndRestrictions();
+			repeatDate = showReservationMenu(campgroundIDs.get(campgroundID), requirements);
 		} while( repeatDate );
 	}
 	
-	private boolean showReservationMenu(Campground campground, Calendar arrivalDateCalendar, Calendar departureDateCalendar, Map<String,Object> requirements) {
+	private void showParkReservationMenu(Park park) {
+		String parkName = park.getName();
+		
+		if( !parkName.toLowerCase().endsWith("park") ) {
+			parkName = String.format("%s %s", parkName, strings.get("NATIONAL_PARK"));
+		}
+		
+		System.out.println(parkName);
+		System.out.println();
+		
+		boolean repeatDate;
+		do {
+			DatesAndRequirements requirements = getDatesAndRestrictions();
+			repeatDate = showReservationMenu(park, requirements);
+		} while( repeatDate );
+	}
+	
+	private DatesAndRequirements getDatesAndRestrictions() {
+		DatesAndRequirements requirements = new DatesAndRequirements();
+
+		SimpleDateFormat arrivalDate = new SimpleDateFormat("MM/dd/yyyy");
+		do {
+			String date = input.getString(strings.get("WHAT_IS_ARRIVAL_DATE"));
+			// validate valid date
+			try {
+				arrivalDate.parse(date);
+				break;
+			} catch( ParseException e ) {
+				System.err.println(strings.get("INVALID_DATE"));
+			}
+		} while(true);
+		SimpleDateFormat departureDate = new SimpleDateFormat("MM/dd/yyyy");
+		do {
+			String date = input.getString(strings.get("WHAT_IS_DEPARTURE_DATE"));
+			// validate valid date
+			try {
+				departureDate.parse(date);
+				break;
+			} catch( ParseException e ) {
+				System.err.println(strings.get("INVALID_DATE"));
+			}
+		} while(true);
+		
+		requirements.setFromDate(arrivalDate.getCalendar());
+		requirements.setToDate(departureDate.getCalendar());
+		
+		Boolean additionalRestrictions = input.getBoolean(strings.get("SPECIAL_REQUIREMENTS"));
+		if( additionalRestrictions != null && additionalRestrictions ) {
+			Long people = input.getLong("%s %s", strings.get("REQUIREMENT_PEOPLE"), strings.get("REQUIREMENT_SKIPPED"));
+			if( people != null && people > 0 ) {
+				requirements.setPeople(people);
+			}
+			Boolean wheelchair = input.getBoolean("%s %s", strings.get("REQUIREMENT_WHEELCHAIR"), strings.get("REQUIREMENT_SKIPPED"));
+			if( wheelchair != null && wheelchair) {
+				requirements.setWheelchair(wheelchair);
+			}
+			Integer rv = input.getInt("%s %s", strings.get("REQUIREMENT_RV_LENGTH"), strings.get("REQUIREMENT_SKIPPED"));
+			if( rv != null && rv > 0 ) {
+				requirements.setRv(rv);
+			}
+			Boolean utility = input.getBoolean("%s %s", strings.get("REQUIREMENT_UTILITY"), strings.get("REQUIREMENT_SKIPPED"));
+			if( utility != null && utility ) {
+				requirements.setUtility(utility);
+			}
+		}
+		
+		return requirements;
+	}
+	
+	private boolean showReservationMenu(NationalParkObject npo, DatesAndRequirements requirements) {
 		menu.cls();
+		
+		Calendar arrivalDateCalendar = requirements.getFromDate();
+		Calendar departureDateCalendar = requirements.getToDate();
 		
 		// swap the dates if departure is before arrival
 		if( arrivalDateCalendar.getTimeInMillis() > departureDateCalendar.getTimeInMillis() ) {
@@ -297,22 +402,46 @@ public class CampgroundCLI {
 		String arrivalDate = dateFormat.format(arrivalDateCalendar.getTime());
 		String departureDate = dateFormat.format(departureDateCalendar.getTime());
 		
-		if ((arrivalDateCalendar.get(Calendar.MONTH) + 1 < campground.getOpenFromMonth()) || (departureDateCalendar.get(Calendar.MONTH) + 1 > campground.getOpenToMonth())) {
-			System.out.format(strings.get("THE_PARK_IS_CLOSED_FROM"), 
-					monthNames.get(campground.getOpenToMonth()),
-					monthNames.get(campground.getOpenFromMonth())
-					);
-			System.out.println();
-			return input.getBoolean(strings.get("ASK_ALTERNATIVE_DATE"));
+		if( npo instanceof Campground ) {
+			Campground campground = (Campground)npo;
+			if ((arrivalDateCalendar.get(Calendar.MONTH) + 1 < campground.getOpenFromMonth()) || (departureDateCalendar.get(Calendar.MONTH) + 1 > campground.getOpenToMonth())) {
+				System.out.format(strings.get("THE_PARK_IS_CLOSED_FROM"), 
+						monthNames.get(campground.getOpenToMonth()),
+						monthNames.get(campground.getOpenFromMonth())
+						);
+				System.out.println();
+				return input.getBoolean(strings.get("ASK_ALTERNATIVE_DATE"));
+			}
+		} else if( npo instanceof Park ) {
+			Park park = (Park)npo;
+			List<Campground> campgroundList = parkDAO.getCampgroundsForPark(park.getParkID());
+			List<Campground> availableCampgrounds = new ArrayList<>();
+			
+			for( Campground campground : campgroundList ) {
+				if ((arrivalDateCalendar.get(Calendar.MONTH) + 1 < campground.getOpenFromMonth()) || (departureDateCalendar.get(Calendar.MONTH) + 1 > campground.getOpenToMonth())) {
+					// don't add to list
+				} else {
+					availableCampgrounds.add(campground);
+				}
+			}
+			
+			if( availableCampgrounds.size() == 0 ) {
+				String arrival = dateFormat.format(arrivalDateCalendar.getTime());
+				String departure = dateFormat.format(departureDateCalendar.getTime());
+				System.out.format(strings.get("NO_RESERVATIONS_AVAILABLE"), arrival, departure);
+				System.out.println();
+				return input.getBoolean(strings.get("ASK_ALTERNATIVE_DATE"));
+			}
 		}
 		
-		// parse requirements
-		Long personCapacity = (Long)requirements.get("people");
-		Boolean needsWheelchairAccess = (Boolean)requirements.get("wheelchair");
-		Integer rvLengthRequired = (Integer)requirements.get("rv");
-		Boolean needsUtility = (Boolean)requirements.get("utility");
-		
-		List<Site> sites = reservationDAO.getAvailableReservations(campground.getCampgroundID(), arrivalDate, departureDate, personCapacity, needsWheelchairAccess, rvLengthRequired, needsUtility);
+		List<Site> sites = null;
+		if( npo instanceof Campground ) {
+			Campground campground = (Campground)npo;
+			sites = reservationDAO.getAvailableReservations(campground, arrivalDate, departureDate, requirements);
+		} else if( npo instanceof Park ) {
+			Park park = (Park)npo;
+			sites = reservationDAO.getAvailableReservations(park, arrivalDate, departureDate, requirements);
+		}
 		
 		if( sites.size() == 0 ) {
 			dateFormat = new SimpleDateFormat("EEEE LLLL d, yyyy");
@@ -326,61 +455,112 @@ public class CampgroundCLI {
 		
 		// cache sites
 		Map<Long,Site> siteMap = new HashMap<>();
-		for( Site s : sites ) {
-			siteMap.put(s.getSiteNumber(), s);
+		for( Site site : sites ) {
+			if( npo instanceof Campground ) {
+				siteMap.put(site.getSiteNumber(), site);
+			} else if( npo instanceof Park ) {
+				// map by ID
+				siteMap.put(site.getSiteID(), site);
+			}
 		}
 		
 		String format = "%%-%ds%%-%ds%%-%ds%%-%ds%%-%ds%%s\n";
 		
+		if( npo instanceof Park ) {
+			// add campground name to the beginning
+			format = "%%-%ds" + format;
+		}
+		
+		int campgroundNameColumnWidth = strings.get("CAMPGROUND_NAME").length();
+		// if park, cycle through and get the longest campground name, also ensure campground parent set
+		if( npo instanceof Park ) {
+			for( Site site : sites ) {
+				objectHelper.ensureClassExists(site, Campground.class);
+				if( site.getCampground().getName().length() > campgroundNameColumnWidth ) {
+					campgroundNameColumnWidth = site.getCampground().getName().length();
+				}
+			}
+		}
+		campgroundNameColumnWidth += SPACE_BETWEEN_COLUMNS;
 		int siteNoColumnWidth = strings.get("SITE_NO").length() + SPACE_BETWEEN_COLUMNS;
 		int maxOccupColumnWidth = strings.get("MAX_OCCUP").length() + SPACE_BETWEEN_COLUMNS;
 		int accessibleColumnWidth = strings.get("ACCESSIBLE").length() + SPACE_BETWEEN_COLUMNS;
 		int maxRVLengthColumnWidth = strings.get("MAX_RV_LENGTH").length() + SPACE_BETWEEN_COLUMNS;
 		int utilityColumnWidth = strings.get("UTILITY").length() + SPACE_BETWEEN_COLUMNS;
 		
-		format = String.format(format, siteNoColumnWidth, maxOccupColumnWidth, accessibleColumnWidth, maxRVLengthColumnWidth, utilityColumnWidth);
+		if( npo instanceof Campground ) {
+			format = String.format(format, siteNoColumnWidth, maxOccupColumnWidth, accessibleColumnWidth, maxRVLengthColumnWidth, utilityColumnWidth);
+		} else {
+			format = String.format(format, campgroundNameColumnWidth, siteNoColumnWidth, maxOccupColumnWidth, accessibleColumnWidth, maxRVLengthColumnWidth, utilityColumnWidth);
+		}
 		
 		long totalDays = ChronoUnit.DAYS.between(arrivalDateCalendar.toInstant(), departureDateCalendar.toInstant());
 		
 		// header
-		System.out.format(format, strings.get("SITE_NO"), strings.get("MAX_OCCUP"), strings.get("ACCESSIBLE"), strings.get("MAX_RV_LENGTH"), strings.get("UTILITY"), strings.get("COST"));
+		if( npo instanceof Campground ) {
+			System.out.format(format, strings.get("SITE_NO"), strings.get("MAX_OCCUP"), strings.get("ACCESSIBLE"), strings.get("MAX_RV_LENGTH"), strings.get("UTILITY"), strings.get("COST"));
+		} else if( npo instanceof Park ) {
+			System.out.format(format, strings.get("CAMPGROUND_NAME"), strings.get("SITE_NO"), strings.get("MAX_OCCUP"), strings.get("ACCESSIBLE"), strings.get("MAX_RV_LENGTH"), strings.get("UTILITY"), strings.get("COST"));
+		}
 		
 		for( Site site : sites ) {
-			String siteNumber = Long.toString(site.getSiteNumber());
+			Campground campground;
+			
+			if( npo instanceof Campground ) {
+				campground = (Campground)npo;
+			} else {
+				campground = site.getCampground();
+			}
+			String campgroundName = campground.getName();
+			String siteNumber = null;
+			if( npo instanceof Campground ) {
+				siteNumber = Long.toString(site.getSiteNumber());
+			} else if( npo instanceof Park ) {
+				// go by IDs instead of site numbers
+				siteNumber = Long.toString(site.getSiteID());
+			}
 			String maxOccup = Long.toString(site.getMaxOccupancy());
 			String accessible = site.getAccessible()?strings.get("YES"):strings.get("NO");
 			String maxRVLength = site.getMaxRVLength()==0?strings.get("NA"):Integer.toString(site.getMaxRVLength());
 			String utility = site.getUtilities()?strings.get("YES"):strings.get("NA");
 			String cost = String.format("$%.2f", campground.getFee()/100.0*totalDays);
 			
-			System.out.format(format, siteNumber, maxOccup, accessible, maxRVLength, utility, cost);
+			if( npo instanceof Campground ) {
+				System.out.format(format, siteNumber, maxOccup, accessible, maxRVLength, utility, cost);
+			} else if( npo instanceof Park ) {
+				System.out.format(format, campgroundName, siteNumber, maxOccup, accessible, maxRVLength, utility, cost);
+			}
 		}
 		
-		Long siteNumber;
+		Long number;
 		System.out.println();
 		do {
-			siteNumber = input.getLong(strings.get("WHICH_SITE_RESERVED"));
-			if( siteNumber == null || (!siteMap.containsKey(siteNumber) && siteNumber != 0) ) {
+			number = input.getLong(strings.get("WHICH_SITE_RESERVED"));
+			if( number == null || (!siteMap.containsKey(number) && number != 0) ) {
 				System.err.println(strings.get("INVALID_SITE"));
-				siteNumber = -1L;
+				number = -1L;
 			}
-		} while( siteNumber < 0 );
-		if( siteNumber == 0 ) {
+		} while( number < 0 );
+		if( number == 0 ) {
 			menu.cls();
 			return false;
 		}
 		String reservationName;
 		do {
 			reservationName = input.getString(strings.get("RESERVATION_NAME"));
-			if( reservationName.trim().isEmpty() ) {
+			if( reservationName == null || reservationName.trim().isEmpty() ) {
 				System.err.println(strings.get("INVALID_RESERVATION_NAME"));
+			} else if( reservationName.trim().length() > MAX_RESERVATION_NAME_LENGTH ) {
+				System.err.println(String.format(strings.get("INVALID_RESERVATION_NAME_LENGTH"), MAX_RESERVATION_NAME_LENGTH));
+				reservationName = "";
 			}
-		} while( reservationName.trim().isEmpty() );
+			reservationName = reservationName.trim();
+		} while( reservationName.isEmpty() );
 		
 		menu.cls();
-		long confirmationID;
+		long confirmationID = -1;
 		try {
-			confirmationID = reservationDAO.makeReservation(siteMap.get(siteNumber).getSiteID(), reservationName, arrivalDate, departureDate);
+			confirmationID = reservationDAO.makeReservation(siteMap.get(number).getSiteID(), reservationName, arrivalDate, departureDate);
 			
 			System.out.format(strings.get("CONFIRMATION_NUMBER"), confirmationID);
 			System.out.println("\n\n");

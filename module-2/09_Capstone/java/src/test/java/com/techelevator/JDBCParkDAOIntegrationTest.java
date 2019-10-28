@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -24,52 +25,43 @@ import com.techelevator.models.jdbc.JDBCParkDAO;
 public class JDBCParkDAOIntegrationTest extends DAOIntegrationTest {
 
 	private JDBCParkDAO dao;
-
-	private long test_Park_Id;
+	
+	private Park oilCreekPark;
+	private List<Campground> oilCreekCampgrounds;
 
 	@Before
 	public void setupPark() {
-		dao = new JDBCParkDAO(dataSource);
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		dao = new JDBCParkDAO(getDataSource());
 
-		// creating at Park for testing.
-		String sqlInsertPark = "INSERT INTO park (name, location, establish_date, area, visitors, description) "
-				+ "VALUES (?, ?, ?, ?, ?, ?) RETURNING park_id";
-
-		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-		LocalDate dt = LocalDate.parse("1978-05-21", dtf);
-
-		test_Park_Id = jdbcTemplate.queryForObject(sqlInsertPark, Long.TYPE, "Oil Creek", "PA", dt, 26000, 3500,
-				"This park is along the banks of Oil Creek");
-
-		dt = LocalDate.parse("1988-04-01", dtf);
-		test_Park_Id = jdbcTemplate.queryForObject(sqlInsertPark, Long.TYPE, "Coal Branch Creek", "PA", dt, 21000, 3900,
-				"This park is woodlands, reclaimed mining area near Reading PA");
+		// creating a Park for testing.
+		oilCreekPark = helper.createFakePark("Oil Creek", "PA", "1978-05-21", 26000, 2500, "This park is along the banks of Oil Creek");
+		helper.createFakePark("Coal Branch Creek", "PA", "1988-04-01", 21000, 3900, "This park is woodlands, reclaimed mining area near Reading PA");
+		
+		// create campgrounds
+		oilCreekCampgrounds = new ArrayList<>(Arrays.asList(
+			helper.createFakeCampground(oilCreekPark.getParkID(), "Campground 1", "01", "05", 28.00),
+			helper.createFakeCampground(oilCreekPark.getParkID(), "Campground 2", "01", "12", 30.00),
+			helper.createFakeCampground(oilCreekPark.getParkID(), "Campground 3", "05", "12", 25.00)
+		));
 	}
 
 	@Test
 	public void testGetAvailableParks() {
 		// Test park created above
-		List<Park> testParks = dao.getAvailableParks();
-		boolean test = false;
-		if (testParks.size() >= 2) {
-			test = true;
-		}
+		List<Park> originalParks = dao.getAvailableParks();
+		
+		helper.createFakePark("Yellowstone", "Wyoming", "1872-03-01", 2219791, 4115000, "Yellowstone was the first national park in the U.S. and is also widely held to be the first national park in the world.");
+		
+		List<Park> newParks = dao.getAvailableParks();
 
-		Assert.assertTrue(test);
-
+		Assert.assertEquals(originalParks.size()+1, newParks.size());
 	}
 
 	@Test
 	public void testGetCampgroundsForPark() {
-		// returns camp sites for Acadia
-		List<Campground> testCampGrounds = dao.getCampgroundsForPark(1);
-		// Acadia has the following sites:
-		// Blackwoods
-		// Seawall
-		// Schoodic Woods
+		List<Campground> testCampGrounds = dao.getCampgroundsForPark(oilCreekPark.getParkID());
 		boolean test = false;
-		if (testCampGrounds.size() == 3) {
+		if (testCampGrounds.size() == oilCreekCampgrounds.size()) {
 			test = true;
 		}
 

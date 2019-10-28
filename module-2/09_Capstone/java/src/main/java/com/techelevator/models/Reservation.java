@@ -2,13 +2,15 @@ package com.techelevator.models;
 
 import java.time.LocalDate;
 
-public class Reservation {
+public class Reservation extends NationalParkObject {
 	private Long reservationID;
 	private Long siteID;
 	private String name;
 	private LocalDate fromDate;
 	private LocalDate toDate;
 	private LocalDate createDate;
+	
+	private Site site;
 	
 	public Long getReservationID() {
 		return reservationID;
@@ -45,5 +47,14 @@ public class Reservation {
 	}
 	public void setCreateDate(LocalDate createDate) {
 		this.createDate = createDate;
+	}
+	public Site getSite() {
+		return this.site;
+	}
+	public void setSite(Site site) {
+		this.site = site;
+	}
+	public NationalParkObject getParent() {
+		return getSite();
 	}
 }

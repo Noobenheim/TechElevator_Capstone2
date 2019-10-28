@@ -1,12 +1,14 @@
 package com.techelevator.models;
 
-public class Campground {
+public class Campground extends NationalParkObject {
 	private Long campgroundID;
 	private Long parkID;
 	private String name;
 	private Integer openFromMonth;
 	private Integer openToMonth;
 	private Integer fee;
+	
+	private Park park;
 	
 	public Long getCampgroundID() {
 		return campgroundID;
@@ -43,5 +45,14 @@ public class Campground {
 	}
 	public void setFee(Integer fee) {
 		this.fee = fee;
+	}
+	public Park getPark() {
+		return park;
+	}
+	public void setPark(Park park) {
+		this.park = park;
+	}
+	public NationalParkObject getParent() {
+		return getPark();
 	}
 }
