@@ -125,10 +125,40 @@ public class JDBCObjectHelperDAO implements ObjectHelperDAO {
 							   "FROM campground WHERE campground_id = ?";
 		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlCampground, campgroundID);
 		
+		Campground campground = null;
+		
 		if( results.next() ) {
-			return mapRowToCampground(results);
+			campground = mapRowToCampground(results);
 		}
-		return null;
+		return campground;
+	}
+	
+	@Override
+	public Park getParkByID(long parkID) {
+		String sqlCampground = "SELECT park_id, name, location, establish_date, area, visitors, description " +
+				   "FROM park WHERE park_id = ?";
+		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlCampground, parkID);
+		
+		Park park = null;
+		
+		if( results.next() ) {
+			park = mapRowToPark(results);
+		}
+		return park;
+	}
+	
+	@Override
+	public Site getSiteByID(long siteID) {
+		String sqlCampground = "SELECT site_id, campground_id, site_number, max_occupancy, accessible, max_rv_length, utilities " +
+				   "FROM site WHERE site_id = ?";
+		SqlRowSet results = jdbcTemplate.queryForRowSet(sqlCampground, siteID);
+		
+		Site site = null;
+		
+		if( results.next() ) {
+			site = mapRowToSite(results);
+		}
+		return site;
 	}
 	
 	@Override

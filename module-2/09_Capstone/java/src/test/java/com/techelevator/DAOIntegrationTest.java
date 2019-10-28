@@ -7,10 +7,14 @@ import javax.sql.DataSource;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 
 public abstract class DAOIntegrationTest {
 
+	protected static IntegrationTestHelper helper;
+	protected static JdbcTemplate jdbcTemplate;
+	
 	/* Using this particular implementation of DataSource so that
 	 * every database interaction is part of the same database
 	 * session and hence the same database transaction */
@@ -27,6 +31,9 @@ public abstract class DAOIntegrationTest {
 		 * returned by this DataSource. This allows us to rollback
 		 * any changes after each test */
 		dataSource.setAutoCommit(false);
+		
+		jdbcTemplate = new JdbcTemplate(dataSource);
+		helper = new IntegrationTestHelper(dataSource);
 	}
 
 	/* After all tests have finished running, this method will close the DataSource */
